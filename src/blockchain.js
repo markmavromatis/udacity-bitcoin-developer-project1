@@ -64,7 +64,28 @@ class Blockchain {
     _addBlock(block) {
         let self = this;
         return new Promise(async (resolve, reject) => {
-           
+            const chainHeight = self.chain.length;
+            block.height = chainHeight;
+
+            // Set the previous block hash if this is not the Genesis Block
+            if (chainHeight > 0) {
+                const previousBlock = self.chain[chainHeight - 1];
+                block.previousBlockHash = previousBlock.hash;
+            }
+
+            block.timestamp = Date.now();
+            block.hash = SHA256(block.body).toString();
+
+            // Check for blockchain errors before adding the new block
+            const errors = await self.validateChain();
+            if (errors.length) {
+                reject(`Validation errors found in blockchain! ${JSON.stringify(errors)}`)
+            } else {
+                resolve("Added");
+            }
+
+            // Add the new block to the chain
+            self.chain.push(block);
         });
     }
 
@@ -160,7 +181,21 @@ class Blockchain {
         let self = this;
         let errorLog = [];
         return new Promise(async (resolve, reject) => {
-            
+            let previousHash = null
+            for (let i = 1; i < self.chain.height; i++) {
+                const aBlock = self.chain[i];
+                const validated = await aBlock.validate();
+                if (!validated) {
+                    errorLog.push("Block " + i + " is not valid!");
+                }
+                if (previousHash) {
+                    if (aBlock.previousBlockHash != previousHash) {
+                        errorLog.push("Previous hash does not match!");
+                    }
+                }
+                previousHash = aBlock.hash;
+            }
+            resolve(errorLog);
         });
     }
 
