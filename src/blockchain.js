@@ -12,6 +12,8 @@ const SHA256 = require('crypto-js/sha256');
 const BlockClass = require('./block.js');
 const bitcoinMessage = require('bitcoinjs-message');
 
+const TIMEOUT_IN_SECONDS = 300
+
 class Blockchain {
 
     /**
@@ -125,7 +127,23 @@ class Blockchain {
     submitStar(address, message, signature, star) {
         let self = this;
         return new Promise(async (resolve, reject) => {
-            
+            // Check timestamp
+            const messageFields = message.split(":");
+            const messageTime = messageFields[1];
+            const currentTime = parseInt(new Date().getTime().toString().slice(0, -3));
+            if (currentTime - messageTime <= TIMEOUT_IN_SECONDS) {
+                bitcoinMessage.verify(message, address, signature);
+                const newBlock = new BlockClass.Block(star);
+                newBlock.address = address;
+                try {
+                    await self._addBlock(newBlock);
+                } catch (e) {
+                    reject(e);
+                }
+                resolve("Block added!");
+            } else {
+                resolve(null);
+            }
         });
     }
 
