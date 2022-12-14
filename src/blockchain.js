@@ -98,8 +98,10 @@ class Blockchain {
      * @param {*} address 
      */
     requestMessageOwnershipVerification(address) {
+        // <WALLET_ADDRESS>:${new Date().getTime().toString().slice(0,-3)}:starRegistry;
         return new Promise((resolve) => {
-            
+            const currentTime = new Date().getTime().toString().slice(0,-3);
+            resolve(address + ":" + currentTime + ":starRegistry");
         });
     }
 
