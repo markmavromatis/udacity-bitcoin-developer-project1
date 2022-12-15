@@ -8,7 +8,6 @@
  *  
  */
 
-const SHA256 = require('crypto-js/sha256');
 const BlockClass = require('./block.js');
 const bitcoinMessage = require('bitcoinjs-message');
 
@@ -75,8 +74,8 @@ class Blockchain {
                 block.previousBlockHash = previousBlock.hash;
             }
 
-            block.timestamp = Date.now();
-            block.hash = SHA256(block.body).toString();
+            block.time = Date.now().toString().slice(0,-3);
+            block.updateHash();
 
             // Check for blockchain errors before adding the new block
             const errors = await self.validateChain();
@@ -213,11 +212,11 @@ class Blockchain {
         let errorLog = [];
         return new Promise(async (resolve, reject) => {
             let previousHash = null
-            for (let i = 1; i < self.chain.height; i++) {
+            for (let i = 0; i < self.chain.length; i++) {
                 const aBlock = self.chain[i];
                 const validated = await aBlock.validate();
                 if (!validated) {
-                    errorLog.push("Block " + i + " is not valid!");
+                    errorLog.push(`Block ${i} is not valid!`);
                 }
                 if (previousHash) {
                     if (aBlock.previousBlockHash != previousHash) {
